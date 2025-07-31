@@ -2,7 +2,7 @@
 // Replace these with your actual Supabase project URL and public API key
 
 const SUPABASE_URL = 'https://orkpwvjghccvcopzahez.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ya3B3dmpnaGNjdmNvcHphaGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NzI5ODYsImV4cCI6MjA2OTU0ODk4Nn0.56QPd8fXU40_zrMn9pS-rgfpzhnq_vhbko89dAQujgE'; // Replace with your actual anon key
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ya3B3dmpnaGNjdmNvcHphaGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NzI5ODYsImV4cCI6MjA2OTU0ODk4Nn0.56QPd8fXU40_zrMn9pS-rgfpzhnq_vhbko89dAQujgE'; // Replace with your new anon key after rotation
 
 // Initialize Supabase client
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

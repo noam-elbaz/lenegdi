@@ -50,6 +50,11 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.local
+.env.production
+
+# Sensitive configuration files
+supabase-config.local.js
 
 # Temporary folders
 tmp/
