@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Negdi Tamid - Audio Classes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <h1>L'Negdi Tamid</h1>
+                <span class="subtitle">Audio Classes</span>
+            </div>
+            <nav class="nav">
+                <button id="adminBtn" class="admin-btn">Admin Panel</button>
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Search classes..." class="search-input">
+                    <button id="searchBtn" class="search-btn">🔍</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="filters">
+                <h3>Filter by Tags:</h3>
+                <div id="tagFilters" class="tag-filters"></div>
+                <button id="clearFilters" class="clear-filters">Clear All</button>
+            </div>
+            
+            <div class="classes-grid" id="classesGrid">
+                <!-- Audio classes will be dynamically loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Admin Panel</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" class="upload-form">
+                    <div class="form-group">
+                        <label for="audioFile">Audio File:</label>
+                        <input type="file" id="audioFile" accept="audio/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="classTitle">Title:</label>
+                        <input type="text" id="classTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="classDescription">Description:</label>
+                        <textarea id="classDescription" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="classTags">Tags (comma separated):</label>
+                        <input type="text" id="classTags" placeholder="e.g., Torah, Halacha, Philosophy">
+                    </div>
+                    <button type="submit" class="submit-btn">Upload Class</button>
+                </form>
+                
+                <div class="admin-classes">
+                    <h3>Manage Classes</h3>
+                    <div id="adminClassesList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Audio Player -->
+    <div id="audioPlayer" class="audio-player hidden">
+        <div class="player-content">
+            <div class="track-info">
+                <div class="track-title" id="currentTitle">No track selected</div>
+                <div class="track-description" id="currentDescription"></div>
+            </div>
+            <div class="player-controls">
+                <button id="prevBtn" class="control-btn">⏮</button>
+                <button id="playPauseBtn" class="control-btn play-pause">▶</button>
+                <button id="nextBtn" class="control-btn">⏭</button>
+            </div>
+            <div class="progress-container">
+                <div class="time-display">
+                    <span id="currentTime">0:00</span>
+                    <div class="progress-bar">
+                        <div id="progressBar" class="progress"></div>
+                        <input type="range" id="progressSlider" min="0" max="100" value="0" class="progress-slider">
+                    </div>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+            <div class="volume-controls">
+                <button id="muteBtn" class="control-btn">🔊</button>
+                <input type="range" id="volumeSlider" min="0" max="100" value="100" class="volume-slider">
+            </div>
+            <button id="closePlayer" class="close-player">✕</button>
+        </div>
+        <audio id="audioElement" preload="metadata"></audio>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
