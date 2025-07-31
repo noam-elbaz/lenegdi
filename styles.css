@@ -373,6 +373,11 @@ body {
     font-family: 'Montserrat', sans-serif;
 }
 
+.admin-controls {
+    margin-bottom: 20px;
+    text-align: right;
+}
+
 .admin-class-item {
     background-color: #000;
     border: 1px solid #333;
