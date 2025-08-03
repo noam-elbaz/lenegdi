@@ -136,6 +136,7 @@ function UploadTab() {
     title: '',
     description: '',
     category: '',
+    thumbnail_url: '',
     tags: '',
     audio_file: null
   });
@@ -234,6 +235,7 @@ function UploadTab() {
         title: formData.title,
         description: formData.description,
         category: formData.category,
+        thumbnail_url: formData.thumbnail_url || null,
         tags: Array.from(selectedTags),
         audio_file_path: audioPath,
         audio_file_url: publicUrl,
@@ -250,6 +252,7 @@ function UploadTab() {
         title: '',
         description: '',
         category: '',
+        thumbnail_url: '',
         tags: '',
         audio_file: null
       });
@@ -351,6 +354,23 @@ function UploadTab() {
             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm disabled:bg-gray-50"
             placeholder="e.g. Torah Study, Prayer, Holiday"
           />
+        </div>
+
+        <div>
+          <label htmlFor="thumbnail_url" className="block text-sm font-medium text-gray-700 mb-1">
+            Thumbnail URL (Optional)
+          </label>
+          <input
+            type="url"
+            id="thumbnail_url"
+            name="thumbnail_url"
+            value={formData.thumbnail_url}
+            onChange={handleInputChange}
+            disabled={isUploading}
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm disabled:bg-gray-50"
+            placeholder="https://example.com/image.jpg"
+          />
+          <p className="mt-1 text-sm text-gray-500">Square format recommended (1:1 aspect ratio)</p>
         </div>
 
         <div>
@@ -521,6 +541,7 @@ function ManageTab() {
         title: editingClass.title,
         description: editingClass.description,
         category: editingClass.category,
+        thumbnail_url: editingClass.thumbnail_url || null,
         tags: editingClass.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
       });
       
@@ -686,6 +707,17 @@ function ManageTab() {
                   type="text"
                   value={editingClass.category}
                   onChange={(e) => setEditingClass(prev => ({ ...prev, category: e.target.value }))}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Thumbnail URL</label>
+                <input
+                  type="url"
+                  value={editingClass.thumbnail_url || ''}
+                  onChange={(e) => setEditingClass(prev => ({ ...prev, thumbnail_url: e.target.value }))}
+                  placeholder="https://example.com/image.jpg"
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm"
                 />
               </div>

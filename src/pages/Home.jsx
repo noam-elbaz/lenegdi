@@ -135,15 +135,26 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
       {/* Classes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredClasses.map(cls => (
-          <div key={cls.id} className={`bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-all flex flex-col ${
+          <div key={cls.id} className={`bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-all ${
+            cls.thumbnail_url ? 'flex' : 'flex flex-col'
+          } ${
             currentTrack?.id === cls.id 
               ? 'border-indigo-500 ring-2 ring-indigo-200 shadow-md' 
               : 'border-gray-200'
           }`}>
-            <div className="p-6 flex-1 flex flex-col">
+            {cls.thumbnail_url && (
+              <div className="w-1/2 aspect-square">
+                <img 
+                  src={cls.thumbnail_url} 
+                  alt={cls.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div className={`${cls.thumbnail_url ? 'w-1/2 p-4' : 'p-6'} flex-1 flex flex-col`}>
               <div className="flex items-start justify-between flex-1">
                 <div className="flex-1 min-w-0">
-                  <h3 className={`text-lg font-medium truncate flex items-center gap-2 ${
+                  <h3 className={`${cls.thumbnail_url ? 'text-base' : 'text-lg'} font-medium truncate flex items-center gap-2 ${
                     currentTrack?.id === cls.id ? 'text-indigo-700' : 'text-gray-900'
                   }`}>
                     {currentTrack?.id === cls.id && isPlaying && (
@@ -151,10 +162,10 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
                     )}
                     {cls.title}
                   </h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className={`mt-1 ${cls.thumbnail_url ? 'text-xs' : 'text-sm'} text-gray-500 ${cls.thumbnail_url ? 'line-clamp-2' : ''}`}>
                     {cls.description || 'No description'}
                   </p>
-                  <div className="mt-2 flex items-center text-sm text-gray-500">
+                  <div className={`mt-2 flex items-center ${cls.thumbnail_url ? 'text-xs' : 'text-sm'} text-gray-500`}>
                     <span>{cls.category || 'Uncategorized'}</span>
                     {cls.duration && (
                       <>
@@ -164,20 +175,25 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
                     )}
                   </div>
                   {cls.tags && cls.tags.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {cls.tags.map(tag => (
+                    <div className={`mt-2 flex flex-wrap gap-1 ${cls.thumbnail_url ? 'max-h-8 overflow-hidden' : ''}`}>
+                      {cls.tags.slice(0, cls.thumbnail_url ? 2 : cls.tags.length).map(tag => (
                         <span
                           key={tag}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                          className={`inline-flex items-center px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-800 ${
+                            cls.thumbnail_url ? 'text-xs' : 'text-xs'
+                          }`}
                         >
                           {tag}
                         </span>
                       ))}
+                      {cls.thumbnail_url && cls.tags.length > 2 && (
+                        <span className="text-xs text-gray-400">+{cls.tags.length - 2}</span>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
-              <div className="mt-4">
+              <div className="mt-3">
                 <button 
                   onClick={async () => {
                     const audioUrl = cls.audio_file_url || cls.audio_url;
@@ -187,7 +203,9 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
                     }
                     onPlayTrack?.(cls, filteredClasses);
                   }}
-                  className={`w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
+                  className={`w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
+                    cls.thumbnail_url ? 'text-sm' : 'text-base'
+                  } ${
                     currentTrack?.id === cls.id && isPlaying
                       ? 'bg-red-600 hover:bg-red-700 text-white'
                       : 'bg-indigo-600 hover:bg-indigo-700 text-white'
