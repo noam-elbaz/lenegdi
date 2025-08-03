@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 function AudioPlayer({ currentTrack, playlist = [], isPlaying, onTrackChange, onPlay, onPause }) {
   const [currentTime, setCurrentTime] = useState(0);
@@ -6,6 +6,15 @@ function AudioPlayer({ currentTrack, playlist = [], isPlaying, onTrackChange, on
   const [volume, setVolume] = useState(1);
   const [isVisible, setIsVisible] = useState(false);
   const audioRef = useRef(null);
+
+  // Define currentIndex and handleNext before useEffects that use them
+  const currentIndex = playlist.findIndex(track => track.id === currentTrack?.id);
+  
+  const handleNext = useCallback(() => {
+    if (currentIndex < playlist.length - 1) {
+      onTrackChange?.(playlist[currentIndex + 1]);
+    }
+  }, [currentIndex, playlist, onTrackChange]);
 
   useEffect(() => {
     if (currentTrack) {
@@ -19,7 +28,6 @@ function AudioPlayer({ currentTrack, playlist = [], isPlaying, onTrackChange, on
     if (!audio) return;
 
     const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration || 0);
     const handleEnded = () => {
       onPause?.();
       handleNext();
@@ -87,7 +95,7 @@ function AudioPlayer({ currentTrack, playlist = [], isPlaying, onTrackChange, on
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
     };
-  }, [currentTrack, isPlaying, onPause]);
+  }, [currentTrack, isPlaying, onPause, handleNext]);
 
   const togglePlay = () => {
     if (isPlaying) {
@@ -123,19 +131,12 @@ function AudioPlayer({ currentTrack, playlist = [], isPlaying, onTrackChange, on
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const currentIndex = playlist.findIndex(track => track.id === currentTrack?.id);
-
   const handlePrevious = () => {
     if (currentIndex > 0) {
       onTrackChange?.(playlist[currentIndex - 1]);
     }
   };
 
-  const handleNext = () => {
-    if (currentIndex < playlist.length - 1) {
-      onTrackChange?.(playlist[currentIndex + 1]);
-    }
-  };
 
   const handleClose = () => {
     const audio = audioRef.current;

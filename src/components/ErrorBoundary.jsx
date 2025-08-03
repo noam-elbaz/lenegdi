@@ -6,7 +6,7 @@ class ErrorBoundary extends Component {
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     // Update state so the next render will show the fallback UI
     return { hasError: true };
   }
@@ -42,7 +42,7 @@ class ErrorBoundary extends Component {
               </div>
             </div>
             
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <div className="mt-4 p-3 bg-gray-100 rounded-md">
                 <h4 className="text-sm font-medium text-gray-800 mb-2">Error Details:</h4>
                 <pre className="text-xs text-gray-600 whitespace-pre-wrap break-words">

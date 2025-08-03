@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useAudioClasses } from '../hooks/useAudioClasses';
@@ -8,8 +8,8 @@ import { CardLoader } from '../components/LoadingSpinner';
 import { InlineError } from '../components/ErrorMessage';
 import Modal from '../components/Modal';
 
-function Admin({ user, activeTab, setActiveTab }) {
-  const { signOut, isAdmin } = useAuth();
+function Admin({ user, activeTab }) {
+  const { isAdmin } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ function Admin({ user, activeTab, setActiveTab }) {
 function LoginForm({ onLogin }) {
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const { modal, success, error: showError, closeModal } = useModal();
+  const { modal } = useModal();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -770,11 +770,7 @@ function AnalyticsTab() {
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState('7d');
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [timeframe]);
-
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -818,7 +814,11 @@ function AnalyticsTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeframe]);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   const formatDuration = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);

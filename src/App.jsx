@@ -13,7 +13,7 @@ function App() {
   const [currentTrack, setCurrentTrack] = useState(null);
   const [playlist, setPlaylist] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [adminActiveTab, setAdminActiveTab] = useState('upload');
+  const [, setAdminActiveTab] = useState('upload');
 
   const handlePlayTrack = (track, trackList = []) => {
     if (currentTrack?.id === track.id) {

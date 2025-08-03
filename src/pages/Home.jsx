@@ -7,7 +7,7 @@ import Modal from '../components/Modal';
 
 function Home({ onPlayTrack, currentTrack, isPlaying }) {
   const { classes, loading, error } = useAudioClasses();
-  const { modal, error: showError, closeModal } = useModal();
+  const { modal, error: showError } = useModal();
   const [filters, setFilters] = useState(new Set());
   const [availableTags, setAvailableTags] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');

@@ -11,7 +11,7 @@ function SupabaseTest() {
     
     try {
       // Test basic connection
-      const { data, error } = await supabase.from('audio_classes').select('count').limit(1);
+      const { error } = await supabase.from('audio_classes').select('count').limit(1);
       
       if (error) {
         setTestResult(`❌ Connection failed: ${error.message}`);
