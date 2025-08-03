@@ -8,11 +8,17 @@ ehthumbs.db
 Thumbs.db
 
 # Editor directories and files
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
 *~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # Logs
 logs
@@ -20,6 +26,8 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Runtime data
 pids
@@ -33,8 +41,19 @@ coverage/
 # nyc test coverage
 .nyc_output
 
-# node_modules (if adding Node.js later)
+# Node.js dependencies
 node_modules/
+
+# Vite build outputs
+dist
+dist-ssr
+build/
+
+# Local env files
+.env
+.env.local
+.env.production
+*.local
 
 # Optional npm cache directory
 .npm
@@ -48,11 +67,6 @@ node_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
-.env
-.env.local
-.env.production
-
 # Sensitive configuration files
 supabase-config.local.js
 
@@ -60,13 +74,6 @@ supabase-config.local.js
 tmp/
 temp/
 
-# Build outputs (if adding build process later)
-dist/
-build/
-
 # Audio files uploaded via admin (for production, these would be on CDN)
 uploads/
 audio/
-
-# Local development files
-*.local

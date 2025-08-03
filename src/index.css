@@ -1,0 +1,4 @@
+/* Basic styles - Tailwind is loaded via CDN */
+body {
+  font-family: 'Manrope', Arial, sans-serif;
+}

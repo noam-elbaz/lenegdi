@@ -1,6 +1,6 @@
 # L'Negdi Tamid - Audio Classes Website
 
-A modern, responsive website for hosting and streaming audio classes with admin panel, authentication, and cloud storage integration.
+A modern, responsive React application for hosting and streaming audio classes with admin panel, authentication, and cloud storage integration.
 
 ## Features
 
@@ -8,104 +8,105 @@ A modern, responsive website for hosting and streaming audio classes with admin 
 - 👤 **Admin Authentication**: Secure login system for content management
 - ☁️ **Cloud Storage**: Files stored on Supabase with CDN delivery
 - 🔍 **Search & Filter**: Search by title, description, or tags
-- 📱 **Responsive Design**: Mobile-friendly interface
-- 🏷️ **Tag System**: Organize classes with custom tags
+- 📱 **Responsive Design**: Mobile-friendly interface with Tailwind CSS
+- 🏷️ **Tag System**: Organize classes with custom tags and smart tag selection
 - 🔐 **Row Level Security**: Secure data access with Supabase RLS
+- 🎨 **Modern UI**: Built with React and Tailwind CSS
 
 ## Technology Stack
 
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Frontend**: React 18, Vite, Tailwind CSS
 - **Backend**: Supabase (Database + Storage + Auth)
-- **Styling**: Custom CSS with L'Negdi Tamid branding
-- **Audio**: HTML5 Audio API with custom controls
+- **Routing**: React Router
+- **State Management**: React hooks and context
+- **Audio**: HTML5 Audio API with custom React components
+- **Font**: Google Fonts (Manrope)
 
 ## Setup Instructions
 
-### 1. Supabase Configuration
+### 1. Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+### 2. Supabase Configuration
 
 #### A. Get Your Supabase Credentials
 1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
-2. Select your project: `orkpwvjghccvcopzahez`
+2. Select your project or create a new one
 3. Go to Settings → API
 4. Copy your Project URL and Anon Public Key
 
-#### B. Update Configuration
-1. Open `supabase-config.js`
-2. Replace `YOUR_SUPABASE_ANON_KEY_HERE` with your actual anon key
-3. The project URL is already set to: `https://orkpwvjghccvcopzahez.supabase.co`
+#### B. Update Environment Variables
+1. Copy `.env.example` to `.env`
+2. Replace the values with your actual Supabase credentials:
+```bash
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+```
 
-### 2. Database Setup
+### 3. Database Setup
 
 #### A. Run Database Schema
 1. Go to Supabase SQL Editor
-2. Copy and paste the contents of `supabase-schema.sql`
+2. Copy and paste the contents of `database/supabase-schema.sql`
 3. Execute the script
 
 #### B. Setup Storage Bucket
-1. Copy and paste the contents of `supabase-storage-setup.sql`
+1. Copy and paste the contents of `database/supabase-storage-setup.sql`
 2. Execute the script in SQL Editor
 
-### 3. Authentication Setup
+### 4. Authentication Setup
 
 #### A. Enable Email Authentication
 1. Go to Authentication → Settings
 2. Enable Email authentication provider
-3. Configure your site URL (e.g., `http://localhost:3000` for development)
+3. Configure your site URL (e.g., `http://localhost:5173` for development)
 
 #### B. Create Admin User
 1. Go to Authentication → Users
 2. Click "Add User"
 3. Create an admin account with email/password
 
-### 4. Local Development
+## Development
 
-#### Option 1: Simple HTTP Server (Python)
-```bash
-# Navigate to project directory
-cd /path/to/your/project
+### Available Scripts
 
-# Python 3
-python -m http.server 3000
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build locally
+- `npm run lint` - Run ESLint
 
-# Python 2
-python -m SimpleHTTPServer 3000
-```
-
-#### Option 2: Node.js HTTP Server
-```bash
-# Install serve globally
-npm install -g serve
-
-# Serve the project
-serve -s . -l 3000
-```
-
-#### Option 3: PHP Server
-```bash
-php -S localhost:3000
-```
-
-### 5. Testing the Setup
-
-1. Open `http://localhost:3000` in your browser
-2. You should see the L'Negdi Tamid website
-3. Click "Login" to access admin features
-4. Use your Supabase admin credentials
-5. Upload a test audio file through the admin panel
-
-## File Structure
+### Project Structure
 
 ```
-lenegdi/
-├── index.html              # Main website HTML
-├── styles.css              # Website styling
-├── script.js               # Main application logic
-├── supabase-config.js      # Supabase configuration
-├── supabase-schema.sql     # Database schema
-├── supabase-storage-setup.sql # Storage configuration
-├── .mcp.json              # MCP configuration for development
-├── .gitignore             # Git ignore rules
-└── README.md              # This file
+├── src/
+│   ├── components/          # Reusable React components
+│   │   ├── AudioPlayer.jsx  # Main audio player component
+│   │   ├── Header.jsx       # Site header with navigation
+│   │   ├── Modal.jsx        # Modern modal component
+│   │   └── ...
+│   ├── hooks/               # Custom React hooks
+│   │   ├── useAuth.js       # Authentication hook
+│   │   ├── useAudioClasses.js # Audio classes data hook
+│   │   ├── useModal.js      # Modal state management
+│   │   └── useFileUpload.js # File upload utilities
+│   ├── pages/               # Page components
+│   │   ├── Home.jsx         # Main classes listing page
+│   │   └── Admin.jsx        # Admin panel with tabs
+│   ├── lib/
+│   │   └── supabase.js      # Supabase client configuration
+│   └── utils/               # Utility functions
+├── database/                # SQL files and database scripts
+├── public/                  # Static assets
+├── .mcp.json               # MCP configuration for development
+├── package.json            # Node.js dependencies and scripts
+└── vite.config.js          # Vite configuration
 ```
 
 ## Usage
@@ -117,14 +118,29 @@ lenegdi/
 - Use the sticky player controls at bottom
 
 ### For Admins
-1. Click "Login" and enter your credentials
-2. Access the Admin Panel after successful login
-3. Upload new audio files with metadata:
-   - Title (required)
-   - Description (optional)
-   - Tags (comma-separated)
-4. Manage your uploaded classes
-5. Delete classes as needed
+1. Click "Sign in" and enter your credentials
+2. Access admin tabs (Upload, Manage, Analytics) after login
+3. **Upload**: Add new audio files with smart tag selection
+4. **Manage**: Edit or delete existing classes
+5. **Analytics**: View usage statistics and storage info
+
+## Features Detail
+
+### Tag System
+- **Smart Tag Selection**: Choose from existing tags to avoid duplicates
+- **Custom Tags**: Add new tags as needed
+- **Tag Filtering**: Filter classes by multiple tags on home page
+
+### Audio Player
+- **Sticky Position**: Stays at bottom during navigation
+- **Full Controls**: Play, pause, seek, volume
+- **Track Info**: Shows current track title and progress
+- **Playlist**: Automatically queues filtered results
+
+### Admin Panel
+- **Upload Tab**: File upload with metadata and tag selection
+- **Manage Tab**: Bulk operations and individual class editing
+- **Analytics Tab**: Storage usage and activity statistics
 
 ## Security Features
 
@@ -137,46 +153,26 @@ lenegdi/
 
 - MP3 (.mp3)
 - WAV (.wav)
-- OGG (.ogg)
 - M4A (.m4a)
-- AAC (.aac)
-- FLAC (.flac)
-
-## File Size Limits
-
 - Maximum file size: 50MB per audio file
-- Storage organized by user ID for better organization
-
-## Development
-
-### MCP Integration
-The project includes `.mcp.json` for development with Supabase MCP server:
-- Database queries and management
-- Storage operations
-- Real-time development assistance
-
-### Adding Features
-- All database changes should update `supabase-schema.sql`
-- Storage policies are in `supabase-storage-setup.sql`
-- Frontend logic is in `script.js`
-- Styling follows the existing L'Negdi Tamid brand guidelines
 
 ## Deployment
 
-### Option 1: GitHub Pages
+### Vercel (Recommended)
 1. Push to GitHub repository
-2. Enable GitHub Pages in repository settings
-3. Update Supabase site URL to your GitHub Pages URL
+2. Connect repository to Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy automatically
 
-### Option 2: Netlify/Vercel
-1. Connect your GitHub repository
-2. Deploy with default build settings
-3. Update Supabase site URL to your deployment URL
+### Netlify
+1. Connect GitHub repository to Netlify
+2. Add environment variables in Netlify settings
+3. Deploy with build command: `npm run build`
 
-### Option 3: Traditional Web Hosting
-1. Upload all files to your web server
-2. Ensure HTTPS is enabled
-3. Update Supabase site URL accordingly
+### Other Platforms
+1. Build the project: `npm run build`
+2. Upload `dist/` folder contents to your hosting provider
+3. Configure environment variables on your platform
 
 ## Troubleshooting
 
@@ -184,12 +180,12 @@ The project includes `.mcp.json` for development with Supabase MCP server:
 
 **"Failed to load classes"**
 - Check if database schema is properly set up
-- Verify Supabase configuration in `supabase-config.js`
+- Verify environment variables in `.env`
 - Check browser console for specific errors
 
 **Authentication not working**
 - Verify email provider is enabled in Supabase
-- Check site URL configuration
+- Check site URL configuration in Supabase Auth settings
 - Ensure admin user exists
 
 **File upload fails**
@@ -202,12 +198,12 @@ The project includes `.mcp.json` for development with Supabase MCP server:
 - Check browser console for CORS errors
 - Verify file URL is accessible
 
-### Getting Help
+## Development with MCP
 
-1. Check browser developer console for errors
-2. Verify Supabase dashboard for data/storage issues
-3. Test with smaller audio files first
-4. Check network tab for failed requests
+The project includes `.mcp.json` for development with Supabase MCP server:
+- Database queries and management
+- Storage operations
+- Real-time development assistance
 
 ## License
 

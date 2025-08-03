@@ -1,17 +1,22 @@
-// Supabase Configuration
-// Replace these with your actual Supabase project URL and public API key
+import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://orkpwvjghccvcopzahez.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_bE14Ztx34YF1m_m8YVvxbQ_6X_xaVUr'; // Get this from Supabase Dashboard → Settings → API
+// Supabase Configuration
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Check if environment variables are loaded
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('Missing Supabase environment variables. Please check your .env file.');
+}
 
 // Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Supabase Storage Configuration
 const STORAGE_BUCKET = 'audio-classes';
 
 // Helper function to get public URL for uploaded files
-function getPublicAudioUrl(filePath) {
+export function getPublicAudioUrl(filePath) {
     const { data } = supabase.storage
         .from(STORAGE_BUCKET)
         .getPublicUrl(filePath);
@@ -19,7 +24,7 @@ function getPublicAudioUrl(filePath) {
 }
 
 // Helper function to upload audio file
-async function uploadAudioFile(file, userId) {
+export async function uploadAudioFile(file, userId) {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
@@ -40,7 +45,7 @@ async function uploadAudioFile(file, userId) {
 }
 
 // Helper function to delete audio file
-async function deleteAudioFile(filePath) {
+export async function deleteAudioFile(filePath) {
     const { error } = await supabase.storage
         .from(STORAGE_BUCKET)
         .remove([filePath]);
@@ -52,7 +57,7 @@ async function deleteAudioFile(filePath) {
 }
 
 // Database helper functions
-async function createAudioClass(classData) {
+export async function createAudioClass(classData) {
     const { data, error } = await supabase
         .from('audio_classes')
         .insert([classData])
@@ -66,7 +71,7 @@ async function createAudioClass(classData) {
     return data[0];
 }
 
-async function getAudioClasses() {
+export async function getAudioClasses() {
     const { data, error } = await supabase
         .from('audio_classes_public')
         .select('*')
@@ -80,7 +85,7 @@ async function getAudioClasses() {
     return data;
 }
 
-async function updateAudioClass(id, updates) {
+export async function updateAudioClass(id, updates) {
     const { data, error } = await supabase
         .from('audio_classes')
         .update(updates)
@@ -95,7 +100,7 @@ async function updateAudioClass(id, updates) {
     return data[0];
 }
 
-async function deleteAudioClass(id) {
+export async function deleteAudioClass(id) {
     const { error } = await supabase
         .from('audio_classes')
         .delete()
@@ -108,7 +113,7 @@ async function deleteAudioClass(id) {
 }
 
 // Authentication helper functions
-async function signInWithEmail(email, password) {
+export async function signInWithEmail(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -122,7 +127,7 @@ async function signInWithEmail(email, password) {
     return data;
 }
 
-async function signOut() {
+export async function signOut() {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -131,38 +136,7 @@ async function signOut() {
     }
 }
 
-async function getCurrentUser() {
+export async function getCurrentUser() {
     const { data: { user } } = await supabase.auth.getUser();
     return user;
-}
-
-// Listen for auth state changes
-supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN') {
-        console.log('User signed in:', session.user);
-        // Update UI to show admin capabilities
-        updateUIForAuthenticatedUser(session.user);
-    } else if (event === 'SIGNED_OUT') {
-        console.log('User signed out');
-        // Update UI to hide admin capabilities
-        updateUIForAnonymousUser();
-    }
-});
-
-// UI update functions (to be implemented in main script)
-function updateUIForAuthenticatedUser(user) {
-    // Show admin panel button
-    const adminBtn = document.getElementById('adminBtn');
-    if (adminBtn) {
-        adminBtn.style.display = 'block';
-        adminBtn.textContent = 'Admin Panel';
-    }
-}
-
-function updateUIForAnonymousUser() {
-    // Hide admin panel button or show login
-    const adminBtn = document.getElementById('adminBtn');
-    if (adminBtn) {
-        adminBtn.textContent = 'Login';
-    }
 }
