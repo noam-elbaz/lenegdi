@@ -513,7 +513,12 @@ function ManageTab() {
   };
 
   const handleEdit = (classItem) => {
-    setEditingClass({ ...classItem, tags: classItem.tags.join(', ') });
+    setEditingClass({
+      ...classItem,
+      tags: classItem.tags || [],
+      selectedTags: new Set(classItem.tags || []),
+      customTag: ''
+    });
   };
 
   const handleSaveEdit = async () => {
@@ -522,7 +527,7 @@ function ManageTab() {
         title: editingClass.title,
         description: editingClass.description,
         thumbnail_url: editingClass.thumbnail_url || null,
-        tags: editingClass.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+        tags: Array.from(editingClass.selectedTags)
       });
       
       setEditingClass(null);
@@ -652,7 +657,7 @@ function ManageTab() {
       {/* Edit Modal */}
       {editingClass && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-10 mx-auto p-5 border max-w-2xl shadow-lg rounded-md bg-white">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Class</h3>
             
             <div className="space-y-4">
@@ -685,17 +690,132 @@ function ManageTab() {
                   placeholder="https://example.com/image.jpg"
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm"
                 />
+                <p className="mt-1 text-sm text-gray-500">Square format recommended (1:1 aspect ratio)</p>
+                {editingClass.thumbnail_url && (
+                  <div className="mt-2">
+                    <img 
+                      src={editingClass.thumbnail_url} 
+                      alt="Thumbnail preview" 
+                      className="w-16 h-16 object-cover rounded border"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-                <input
-                  type="text"
-                  value={editingClass.tags}
-                  onChange={(e) => setEditingClass(prev => ({ ...prev, tags: e.target.value }))}
-                  placeholder="Separate with commas"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                
+                {/* Existing Tags */}
+                {classes && (() => {
+                  const existingTags = [...new Set(classes.flatMap(cls => cls.tags || []))].sort();
+                  return existingTags.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-2">Select from existing tags:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {existingTags.map(tag => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => {
+                              const newSelectedTags = new Set(editingClass.selectedTags);
+                              if (newSelectedTags.has(tag)) {
+                                newSelectedTags.delete(tag);
+                              } else {
+                                newSelectedTags.add(tag);
+                              }
+                              setEditingClass(prev => ({ ...prev, selectedTags: newSelectedTags }));
+                            }}
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                              editingClass.selectedTags?.has(tag)
+                                ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
+                                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                            }`}
+                          >
+                            {tag}
+                            {editingClass.selectedTags?.has(tag) && (
+                              <span className="ml-1">✓</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+                
+                {/* Add Custom Tag */}
+                <div className="mb-3">
+                  <p className="text-xs text-gray-500 mb-2">Add a new tag:</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editingClass.customTag || ''}
+                      onChange={(e) => setEditingClass(prev => ({ ...prev, customTag: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const tag = editingClass.customTag?.trim();
+                          if (tag && !editingClass.selectedTags?.has(tag)) {
+                            setEditingClass(prev => ({
+                              ...prev,
+                              selectedTags: new Set([...prev.selectedTags, tag]),
+                              customTag: ''
+                            }));
+                          }
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 text-sm"
+                      placeholder="Enter new tag"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tag = editingClass.customTag?.trim();
+                        if (tag && !editingClass.selectedTags?.has(tag)) {
+                          setEditingClass(prev => ({
+                            ...prev,
+                            selectedTags: new Set([...prev.selectedTags, tag]),
+                            customTag: ''
+                          }));
+                        }
+                      }}
+                      disabled={!editingClass.customTag?.trim()}
+                      className="px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Selected Tags Display */}
+                {editingClass.selectedTags?.size > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-2">Selected tags:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from(editingClass.selectedTags).map(tag => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newSelectedTags = new Set(editingClass.selectedTags);
+                              newSelectedTags.delete(tag);
+                              setEditingClass(prev => ({ ...prev, selectedTags: newSelectedTags }));
+                            }}
+                            className="ml-1 text-indigo-600 hover:text-indigo-800"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             

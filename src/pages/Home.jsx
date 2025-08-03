@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAudioClasses } from '../hooks/useAudioClasses';
 import { useModal } from '../hooks/useModal';
 import { PageLoader } from '../components/LoadingSpinner';
@@ -11,24 +11,43 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
   const [filters, setFilters] = useState(new Set());
   const [availableTags, setAvailableTags] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const sortDropdownRef = useRef(null);
 
   useEffect(() => {
-    // Extract unique tags when classes change
-    const tags = new Set();
+    // Extract unique tags with counts when classes change
+    const tagCounts = {};
     classes?.forEach(cls => {
       if (cls.tags && Array.isArray(cls.tags)) {
-        cls.tags.forEach(tag => tags.add(tag));
+        cls.tags.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
       }
     });
-    setAvailableTags(Array.from(tags));
+    setAvailableTags(Object.entries(tagCounts).map(([tag, count]) => ({ tag, count })).sort((a, b) => a.tag.localeCompare(b.tag)));
   }, [classes]);
 
-  const toggleFilter = (tag) => {
+  // Close sort dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target)) {
+        setShowSortDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const toggleFilter = (tagName) => {
     const newFilters = new Set(filters);
-    if (newFilters.has(tag)) {
-      newFilters.delete(tag);
+    if (newFilters.has(tagName)) {
+      newFilters.delete(tagName);
     } else {
-      newFilters.add(tag);
+      newFilters.add(tagName);
     }
     setFilters(newFilters);
   };
@@ -37,23 +56,36 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
     setFilters(new Set());
   };
 
-  const filteredClasses = classes.filter(cls => {
-    // Search filter
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = 
-        cls.title?.toLowerCase().includes(searchLower) ||
-        cls.description?.toLowerCase().includes(searchLower) ||
-        cls.tags?.some(tag => tag.toLowerCase().includes(searchLower));
+  const filteredClasses = classes
+    .filter(cls => {
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = 
+          cls.title?.toLowerCase().includes(searchLower) ||
+          cls.description?.toLowerCase().includes(searchLower) ||
+          cls.tags?.some(tag => tag.toLowerCase().includes(searchLower));
+        
+        if (!matchesSearch) return false;
+      }
       
-      if (!matchesSearch) return false;
-    }
-    
-    // Tag filters
-    if (filters.size === 0) return true;
-    if (!cls.tags || !Array.isArray(cls.tags)) return false;
-    return cls.tags.some(tag => filters.has(tag));
-  });
+      // Tag filters - ALL selected tags must be present (AND logic)
+      if (filters.size === 0) return true;
+      if (!cls.tags || !Array.isArray(cls.tags)) return false;
+      return Array.from(filters).every(filterTag => cls.tags.includes(filterTag));
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.created_at) - new Date(b.created_at);
+        case 'newest':
+          return new Date(b.created_at) - new Date(a.created_at);
+        case 'title':
+          return (a.title || '').localeCompare(b.title || '');
+        default:
+          return 0;
+      }
+    });
 
   if (loading) {
     return <PageLoader text="Loading audio classes..." />;
@@ -71,64 +103,123 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
-      {/* Search */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Search audio classes..."
-          />
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center justify-between py-4">
-        <div className="flex items-center gap-4">
+      {/* Filters and Search */}
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4 flex-1">
           <span className="text-sm font-medium text-gray-700">Filter:</span>
-          <div className="flex flex-wrap gap-2">
-            {availableTags.map(tag => (
+          <div className="flex flex-wrap gap-2 items-center">
+            {availableTags.map(({ tag, count }) => (
               <button
                 key={tag}
                 onClick={() => toggleFilter(tag)}
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                className={`inline-flex items-center justify-between px-3 py-1 rounded-full text-sm font-medium ${
                   filters.has(tag)
                     ? 'bg-indigo-100 text-indigo-800'
                     : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                 }`}
               >
-                {tag}
+                <span>{tag}</span>
+                <span className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-medium ${
+                  filters.has(tag)
+                    ? 'bg-indigo-200 text-indigo-900'
+                    : 'bg-gray-200 text-gray-700'
+                }`}>
+                  {count}
+                </span>
               </button>
             ))}
-          </div>
-        </div>
-        {(filters.size > 0 || searchTerm) && (
-          <div className="flex items-center gap-2">
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-              >
-                Clear Search
-              </button>
-            )}
             {filters.size > 0 && (
               <button
                 onClick={clearAllFilters}
-                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium ml-2"
               >
                 Clear Filters
               </button>
             )}
           </div>
-        )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`w-64 pl-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
+                searchTerm ? 'pr-10' : 'pr-3'
+              }`}
+              placeholder="Search audio classes..."
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                title="Clear search"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            )}
+          </div>
+          
+          <div className="relative" ref={sortDropdownRef}>
+            <button
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-md"
+              title="Sort options"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
+              </svg>
+            </button>
+            
+            {showSortDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      setSortBy('newest');
+                      setShowSortDropdown(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                      sortBy === 'newest' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'
+                    }`}
+                  >
+                    Newest First
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSortBy('oldest');
+                      setShowSortDropdown(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                      sortBy === 'oldest' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'
+                    }`}
+                  >
+                    Oldest First
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSortBy('title');
+                      setShowSortDropdown(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                      sortBy === 'title' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'
+                    }`}
+                  >
+                    Title A-Z
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Classes Grid */}
@@ -164,11 +255,14 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
                   <p className={`mt-1 ${cls.thumbnail_url ? 'text-xs' : 'text-sm'} text-gray-500 ${cls.thumbnail_url ? 'line-clamp-2' : ''}`}>
                     {cls.description || 'No description'}
                   </p>
-                  {cls.duration && (
-                    <div className={`mt-2 flex items-center ${cls.thumbnail_url ? 'text-xs' : 'text-sm'} text-gray-500`}>
-                      <span>{Math.floor(cls.duration / 60)}:{String(cls.duration % 60).padStart(2, '0')}</span>
-                    </div>
-                  )}
+                  <div className={`mt-2 flex items-center justify-between ${cls.thumbnail_url ? 'text-xs' : 'text-sm'} text-gray-500`}>
+                    {cls.duration && (
+                      <span>{Math.floor(cls.duration / 60)}:{String(cls.duration % 60).padStart(2, '0')} min</span>
+                    )}
+                    {cls.created_at && (
+                      <span>{new Date(cls.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    )}
+                  </div>
                   {cls.tags && cls.tags.length > 0 && (
                     <div className={`mt-2 flex flex-wrap gap-1 ${cls.thumbnail_url ? 'max-h-8 overflow-hidden' : ''}`}>
                       {cls.tags.slice(0, cls.thumbnail_url ? 2 : cls.tags.length).map(tag => (
