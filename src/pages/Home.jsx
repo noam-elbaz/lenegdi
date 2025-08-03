@@ -169,7 +169,6 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
                       <span>{Math.floor(cls.duration / 60)}:{String(cls.duration % 60).padStart(2, '0')}</span>
                     </div>
                   )}
-                  </div>
                   {cls.tags && cls.tags.length > 0 && (
                     <div className={`mt-2 flex flex-wrap gap-1 ${cls.thumbnail_url ? 'max-h-8 overflow-hidden' : ''}`}>
                       {cls.tags.slice(0, cls.thumbnail_url ? 2 : cls.tags.length).map(tag => (
