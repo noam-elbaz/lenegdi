@@ -1,3 +1,89 @@
+// Simple Client-Side Router
+class Router {
+    constructor() {
+        this.routes = {};
+        this.currentRoute = '/';
+        
+        // Listen for browser navigation
+        window.addEventListener('popstate', (e) => {
+            this.handleRoute(window.location.pathname + window.location.search);
+        });
+        
+        // Handle initial load
+        this.handleRoute(window.location.pathname + window.location.search);
+    }
+    
+    addRoute(path, handler) {
+        this.routes[path] = handler;
+    }
+    
+    navigate(path) {
+        if (path !== this.currentRoute) {
+            history.pushState({}, '', path);
+            this.handleRoute(path);
+        }
+    }
+    
+    handleRoute(path) {
+        this.currentRoute = path;
+        
+        // Parse path and query params
+        const [pathname, search] = path.split('?');
+        const params = new URLSearchParams(search || '');
+        
+        // Find matching route
+        let matchedRoute = null;
+        let routeParams = {};
+        
+        // Check exact matches first
+        if (this.routes[pathname]) {
+            matchedRoute = this.routes[pathname];
+        } else {
+            // Check for parameterized routes
+            for (const route in this.routes) {
+                if (route.includes(':')) {
+                    const routeParts = route.split('/');
+                    const pathParts = pathname.split('/');
+                    
+                    if (routeParts.length === pathParts.length) {
+                        let isMatch = true;
+                        const params = {};
+                        
+                        for (let i = 0; i < routeParts.length; i++) {
+                            if (routeParts[i].startsWith(':')) {
+                                params[routeParts[i].slice(1)] = pathParts[i];
+                            } else if (routeParts[i] !== pathParts[i]) {
+                                isMatch = false;
+                                break;
+                            }
+                        }
+                        
+                        if (isMatch) {
+                            matchedRoute = this.routes[route];
+                            routeParams = params;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Default to home route if no match
+        if (!matchedRoute && this.routes['/']) {
+            matchedRoute = this.routes['/'];
+        }
+        
+        // Execute route handler
+        if (matchedRoute) {
+            matchedRoute({ 
+                path: pathname, 
+                params: routeParams, 
+                query: Object.fromEntries(params) 
+            });
+        }
+    }
+}
+
 class AudioClassesApp {
     constructor() {
         this.classes = [];
@@ -13,9 +99,194 @@ class AudioClassesApp {
         this.selectedClasses = new Set();
         
         this.initializeElements();
+        this.initializeRouter();
         this.bindEvents();
         this.checkAuthState();
         this.loadClasses();
+    }
+
+    initializeRouter() {
+        this.router = new Router();
+        
+        // Define routes
+        this.router.addRoute('/', (route) => {
+            this.handleHomeRoute(route);
+        });
+        
+        this.router.addRoute('/admin', (route) => {
+            this.handleAdminRoute(route);
+        });
+    }
+    
+    handleHomeRoute(route) {
+        // Close admin panel if open
+        this.closeAdminModal();
+        
+        // Update any UI state for home
+        this.updateUIForRoute('home');
+    }
+    
+    handleAdminRoute(route) {
+        // Check if user is authenticated
+        if (!this.currentUser) {
+            this.openLoginModal();
+            return;
+        }
+        
+        // Default to upload tab, or use query parameter
+        const tab = route.query.tab || 'upload';
+        this.openAdminModal();
+        this.switchTab(tab);
+        this.updateUIForRoute('admin', tab);
+    }
+    
+    updateUIForRoute(section, subsection = null) {
+        // Update any visual indicators or state based on current route
+        // This can be used to highlight navigation items, etc.
+        console.log(`Current route: ${section}${subsection ? '/' + subsection : ''}`);
+    }
+    
+    // Navigation helper methods
+    navigateHome() {
+        this.router.navigate('/');
+    }
+    
+    navigateToAdmin(tab = 'upload') {
+        if (this.currentUser) {
+            const url = tab === 'upload' ? '/admin' : `/admin?tab=${tab}`;
+            this.router.navigate(url);
+        } else {
+            this.openLoginModal();
+        }
+    }
+
+    // Custom Dialog System
+    showDialog(options) {
+        return new Promise((resolve) => {
+            const {
+                title = '',
+                message = '',
+                type = 'info', // 'success', 'error', 'warning', 'info'
+                buttons = [{ text: 'OK', type: 'primary' }],
+                showCancel = false
+            } = options;
+
+            const dialog = document.getElementById('customDialog');
+            const dialogTitle = document.getElementById('dialogTitle');
+            const dialogMessage = document.getElementById('dialogMessage');
+            const dialogIcon = document.getElementById('dialogIcon');
+            const dialogIconContainer = dialogIcon.parentElement;
+            const dialogActions = document.getElementById('dialogActions');
+
+            // Set title and message
+            dialogTitle.textContent = title;
+            dialogMessage.textContent = message;
+
+            // Set icon and styling based on type
+            const icons = {
+                success: '✓',
+                error: '✕',
+                warning: '⚠',
+                info: 'ℹ'
+            };
+
+            dialogIcon.textContent = icons[type] || icons.info;
+            
+            // Reset icon container classes
+            dialogIconContainer.className = 'dialog-icon-container ' + type;
+            dialogIcon.className = 'dialog-icon ' + type;
+
+            // Clear existing buttons
+            dialogActions.innerHTML = '';
+
+            // Add buttons
+            buttons.forEach((button, index) => {
+                const btn = document.createElement('button');
+                btn.className = `dialog-btn ${button.type || 'secondary'}`;
+                btn.textContent = button.text;
+                btn.addEventListener('click', () => {
+                    this.hideDialog();
+                    resolve(button.value !== undefined ? button.value : index);
+                });
+                dialogActions.appendChild(btn);
+            });
+
+            // Add cancel button if requested
+            if (showCancel) {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'dialog-btn secondary';
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.addEventListener('click', () => {
+                    this.hideDialog();
+                    resolve(false);
+                });
+                dialogActions.appendChild(cancelBtn);
+            }
+
+            // Show dialog with animation
+            dialog.classList.remove('hidden');
+            setTimeout(() => {
+                dialog.classList.add('show');
+            }, 10);
+
+            // Close on backdrop click
+            const backdrop = dialog.querySelector('.dialog-backdrop');
+            backdrop.addEventListener('click', () => {
+                this.hideDialog();
+                resolve(false);
+            });
+        });
+    }
+
+    hideDialog() {
+        const dialog = document.getElementById('customDialog');
+        dialog.classList.remove('show');
+        setTimeout(() => {
+            dialog.classList.add('hidden');
+        }, 300);
+    }
+
+    // Custom Alert (replaces native alert)
+    customAlert(message, title = 'Notice') {
+        return this.showDialog({
+            title,
+            message,
+            type: 'info',
+            buttons: [{ text: 'OK', type: 'primary' }]
+        });
+    }
+
+    // Custom Success Alert
+    customSuccess(message, title = 'Success') {
+        return this.showDialog({
+            title,
+            message,
+            type: 'success',
+            buttons: [{ text: 'OK', type: 'success' }]
+        });
+    }
+
+    // Custom Error Alert
+    customError(message, title = 'Error') {
+        return this.showDialog({
+            title,
+            message,
+            type: 'error',
+            buttons: [{ text: 'OK', type: 'danger' }]
+        });
+    }
+
+    // Custom Confirm (replaces native confirm)
+    customConfirm(message, title = 'Confirm') {
+        return this.showDialog({
+            title,
+            message,
+            type: 'warning',
+            buttons: [
+                { text: 'Cancel', type: 'secondary', value: false },
+                { text: 'Confirm', type: 'danger', value: true }
+            ]
+        });
     }
 
     initializeElements() {
@@ -97,8 +368,6 @@ class AudioClassesApp {
         this.editTagsPreview = document.getElementById('editTagsPreview');
         this.cancelEdit = document.getElementById('cancelEdit');
         
-        // Fullscreen and other controls
-        this.toggleFullscreen = document.getElementById('toggleFullscreen');
     }
 
     bindEvents() {
@@ -178,10 +447,6 @@ class AudioClassesApp {
             this.editTags.addEventListener('input', () => this.updateEditTagsPreview());
         }
         
-        // Other controls
-        if (this.toggleFullscreen) {
-            this.toggleFullscreen.addEventListener('click', () => this.toggleFullscreenMode());
-        }
         
         // Modal close on outside click
         window.addEventListener('click', (e) => {
@@ -226,7 +491,7 @@ class AudioClassesApp {
 
     handleAdminButtonClick() {
         if (this.currentUser) {
-            this.openAdminModal();
+            this.router.navigate('/admin');
         } else {
             this.openLoginModal();
         }
@@ -242,10 +507,11 @@ class AudioClassesApp {
             const { user } = await signInWithEmail(email, password);
             this.updateUIForAuthenticatedUser(user);
             this.closeLoginModal();
-            this.openAdminModal();
-            alert('Login successful!');
+            this.customSuccess('Login successful!');
+            // Navigate to admin after successful login
+            this.router.navigate('/admin');
         } catch (error) {
-            alert('Login failed: ' + error.message);
+            this.customError('Login failed: ' + error.message);
         }
     }
 
@@ -254,9 +520,11 @@ class AudioClassesApp {
             await signOut();
             this.updateUIForAnonymousUser();
             this.closeAdminModal();
-            alert('Logged out successfully!');
+            this.customSuccess('Logged out successfully!');
+            // Navigate back to home after logout
+            this.router.navigate('/');
         } catch (error) {
-            alert('Logout failed: ' + error.message);
+            this.customError('Logout failed: ' + error.message);
         }
     }
 
@@ -290,13 +558,17 @@ class AudioClassesApp {
 
     closeAdminModal() {
         this.adminModal.classList.remove('show');
+        // Navigate back to home when closing admin panel
+        if (window.location.pathname !== '/') {
+            this.router.navigate('/');
+        }
     }
 
     async handleUpload(e) {
         e.preventDefault();
         
         if (!this.currentUser) {
-            alert('Please login first');
+            this.customError('Please login first');
             return;
         }
         
@@ -306,7 +578,7 @@ class AudioClassesApp {
         const tagsInput = document.getElementById('classTags');
         
         if (!fileInput.files[0]) {
-            alert('Please select an audio file');
+            this.customError('Please select an audio file');
             return;
         }
         
@@ -318,7 +590,7 @@ class AudioClassesApp {
         // Show upload progress
         const submitBtn = document.getElementById('submitUpload');
         if (!submitBtn) {
-            alert('Upload button not found');
+            this.customError('Upload button not found');
             return;
         }
         
@@ -326,7 +598,7 @@ class AudioClassesApp {
         const btnSpinner = submitBtn.querySelector('.btn-spinner');
         
         if (!btnText) {
-            alert('Button text element not found');
+            this.customError('Button text element not found');
             return;
         }
         
@@ -348,12 +620,15 @@ class AudioClassesApp {
             const duration = await this.getAudioDuration(file);
             
             // Create database record
+            const categoryValue = document.getElementById('classCategory').value;
+            const levelValue = document.getElementById('classLevel').value;
+            
             const classData = {
                 title,
                 description,
                 tags,
-                category: document.getElementById('classCategory').value,
-                level: document.getElementById('classLevel').value,
+                category: categoryValue || null,
+                level: levelValue || null,
                 audio_file_path: uploadResult.path,
                 audio_file_url: uploadResult.publicUrl,
                 duration: Math.round(duration),
@@ -372,10 +647,10 @@ class AudioClassesApp {
             this.resetUploadForm();
             this.hideUploadProgress();
             
-            alert('Class uploaded successfully!');
+            this.customSuccess('Class uploaded successfully!');
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Upload failed: ' + error.message);
+            this.customError('Upload failed: ' + error.message);
             this.hideUploadProgress();
         } finally {
             if (btnText) {
@@ -417,9 +692,14 @@ class AudioClassesApp {
                 <div class="class-tags">
                     ${cls.tags.map(tag => `<span class="class-tag">${tag}</span>`).join('')}
                 </div>
-                <button class="play-btn" onclick="app.playClass('${cls.id}')">▶ Play</button>
+                <button class="play-btn" onclick="app.handlePlayButtonClick('${cls.id}')">▶ Play</button>
             </div>
         `).join('');
+        
+        // Restore playing indicators after re-render
+        if (this.currentAudio && this.currentAudio.id) {
+            this.updatePlayingIndicators(this.currentAudio.id);
+        }
     }
 
     renderTagFilters() {
@@ -494,6 +774,18 @@ class AudioClassesApp {
         this.renderClasses();
     }
 
+    // Handle play button clicks with smart play/pause logic
+    handlePlayButtonClick(classId) {
+        // If this is the currently playing track
+        if (this.currentAudio && this.currentAudio.id === classId) {
+            // Toggle play/pause
+            this.togglePlayPause();
+        } else {
+            // Play new track
+            this.playClass(classId);
+        }
+    }
+
     // Audio Player Methods
     playClass(classId) {
         const cls = this.classes.find(c => c.id === classId);
@@ -503,6 +795,7 @@ class AudioClassesApp {
         this.currentTrackIndex = this.classes.findIndex(c => c.id === classId);
         this.loadTrack(cls);
         this.showAudioPlayer();
+        this.updatePlayingIndicators(classId);
         this.play();
     }
 
@@ -512,6 +805,11 @@ class AudioClassesApp {
         this.currentTitle.textContent = cls.title;
         this.currentDescription.textContent = cls.description || '';
         this.audioElement.load();
+        
+        // Update playing indicators when loading a new track
+        if (cls && cls.id) {
+            this.updatePlayingIndicators(cls.id);
+        }
     }
 
     showAudioPlayer() {
@@ -523,6 +821,7 @@ class AudioClassesApp {
         this.pause();
         this.audioElement.src = '';
         this.currentAudio = null;
+        this.clearPlayingIndicators();
     }
 
     togglePlayPause() {
@@ -537,18 +836,51 @@ class AudioClassesApp {
         this.audioElement.play();
         this.isPlaying = true;
         this.playPauseBtn.textContent = '⏸';
+        
+        // Remove paused state from visual indicators
+        document.querySelectorAll('.playing.paused').forEach(element => {
+            element.classList.remove('paused');
+        });
+        
+        // Update play button text for currently playing track
+        if (this.currentAudio && this.currentAudio.id) {
+            const playingCard = document.querySelector(`[data-id="${this.currentAudio.id}"]`);
+            if (playingCard) {
+                const playBtn = playingCard.querySelector('.play-btn');
+                if (playBtn) {
+                    playBtn.textContent = '🎵 Now Playing';
+                }
+            }
+        }
     }
 
     pause() {
         this.audioElement.pause();
         this.isPlaying = false;
         this.playPauseBtn.textContent = '▶';
+        
+        // Add paused state to visual indicators
+        document.querySelectorAll('.playing').forEach(element => {
+            element.classList.add('paused');
+        });
+        
+        // Update play button text for paused track
+        if (this.currentAudio && this.currentAudio.id) {
+            const playingCard = document.querySelector(`[data-id="${this.currentAudio.id}"]`);
+            if (playingCard) {
+                const playBtn = playingCard.querySelector('.play-btn');
+                if (playBtn) {
+                    playBtn.textContent = '▶ Resume';
+                }
+            }
+        }
     }
 
     previousTrack() {
         if (this.currentTrackIndex > 0) {
             this.currentTrackIndex--;
-            this.loadTrack(this.currentPlaylist[this.currentTrackIndex]);
+            const newTrack = this.currentPlaylist[this.currentTrackIndex];
+            this.loadTrack(newTrack);
             if (this.isPlaying) this.play();
         }
     }
@@ -556,11 +888,13 @@ class AudioClassesApp {
     nextTrack() {
         if (this.currentTrackIndex < this.currentPlaylist.length - 1) {
             this.currentTrackIndex++;
-            this.loadTrack(this.currentPlaylist[this.currentTrackIndex]);
+            const newTrack = this.currentPlaylist[this.currentTrackIndex];
+            this.loadTrack(newTrack);
             if (this.isPlaying) this.play();
         } else {
             // End of playlist
             this.pause();
+            this.clearPlayingIndicators();
         }
     }
 
@@ -608,7 +942,8 @@ class AudioClassesApp {
 
     // Class Management Methods
     async deleteClass(classId) {
-        if (!confirm('Are you sure you want to delete this class?')) return;
+        const confirmed = await this.customConfirm('Are you sure you want to delete this class?', 'Delete Class');
+        if (!confirmed) return;
         
         try {
             const cls = this.classes.find(c => c.id === classId);
@@ -629,10 +964,10 @@ class AudioClassesApp {
                 this.closeAudioPlayer();
             }
             
-            alert('Class deleted successfully!');
+            this.customSuccess('Class deleted successfully!');
         } catch (error) {
             console.error('Delete error:', error);
-            alert('Delete failed: ' + error.message);
+            this.customError('Delete failed: ' + error.message);
         }
     }
 
@@ -649,6 +984,21 @@ class AudioClassesApp {
         this.tabContents.forEach(content => {
             content.classList.toggle('active', content.id === `${tabName}Tab`);
         });
+        
+        // Update URL with query parameter for non-upload tabs
+        if (tabName !== 'upload') {
+            const currentUrl = window.location.pathname + window.location.search;
+            const expectedUrl = `/admin?tab=${tabName}`;
+            if (currentUrl !== expectedUrl) {
+                this.router.navigate(expectedUrl);
+            }
+        } else {
+            // For upload tab, just use /admin without query params
+            const currentUrl = window.location.pathname + window.location.search;
+            if (currentUrl !== '/admin') {
+                this.router.navigate('/admin');
+            }
+        }
         
         // Load tab-specific data
         if (tabName === 'manage') {
@@ -834,7 +1184,15 @@ class AudioClassesApp {
                     <div class="class-title">${cls.title}</div>
                     <div class="class-description">${cls.description || 'No description'}</div>
                 </td>
-                <td>${cls.category || 'Uncategorized'}</td>
+                <td>
+                    <div class="class-category">${cls.category || 'Uncategorized'}</div>
+                    <div class="class-tags-display">
+                        ${cls.tags && cls.tags.length > 0 ? 
+                            cls.tags.map(tag => `<span class="admin-tag">${tag}</span>`).join('') : 
+                            '<span class="no-tags">No tags</span>'
+                        }
+                    </div>
+                </td>
                 <td>${this.formatTime(cls.duration || 0)}</td>
                 <td>${this.formatFileSize(cls.file_size || 0)}</td>
                 <td>${new Date(cls.created_at).toLocaleDateString()}</td>
@@ -849,6 +1207,11 @@ class AudioClassesApp {
         
         this.updatePagination(filteredClasses.length);
         this.bindTableEvents();
+        
+        // Restore playing indicators after table re-render
+        if (this.currentAudio && this.currentAudio.id) {
+            this.updatePlayingIndicators(this.currentAudio.id);
+        }
     }
 
     bindTableEvents() {
@@ -947,7 +1310,8 @@ class AudioClassesApp {
         if (this.selectedClasses.size === 0) return;
         
         const confirmMsg = `Are you sure you want to delete ${this.selectedClasses.size} selected class(es)?`;
-        if (!confirm(confirmMsg)) return;
+        const confirmed = await this.customConfirm(confirmMsg, 'Delete Selected Classes');
+        if (!confirmed) return;
         
         try {
             for (const classId of this.selectedClasses) {
@@ -957,10 +1321,10 @@ class AudioClassesApp {
             this.selectedClasses.clear();
             await this.loadClasses();
             await this.loadAdminData();
-            alert('Selected classes deleted successfully!');
+            this.customSuccess('Selected classes deleted successfully!');
         } catch (error) {
             console.error('Bulk delete error:', error);
-            alert('Failed to delete some classes: ' + error.message);
+            this.customError('Failed to delete some classes: ' + error.message);
         }
     }
 
@@ -1021,10 +1385,10 @@ class AudioClassesApp {
             this.closeEditModalHandler();
             await this.loadClasses();
             await this.loadAdminData();
-            alert('Class updated successfully!');
+            this.customSuccess('Class updated successfully!');
         } catch (error) {
             console.error('Edit error:', error);
-            alert('Update failed: ' + error.message);
+            this.customError('Update failed: ' + error.message);
         }
     }
 
@@ -1127,16 +1491,63 @@ class AudioClassesApp {
         }
     }
 
-    toggleFullscreenMode() {
-        this.adminModal.classList.toggle('fullscreen');
-        const btn = this.toggleFullscreen;
-        const isFullscreen = this.adminModal.classList.contains('fullscreen');
-        btn.textContent = isFullscreen ? '⛶ Exit Fullscreen' : '⛶ Fullscreen';
+
+    // Visual indicators for currently playing audio
+    updatePlayingIndicators(currentClassId) {
+        // Clear all existing playing indicators
+        this.clearPlayingIndicators();
+        
+        // Add playing class to the currently playing card in main grid
+        const playingCard = document.querySelector(`[data-id="${currentClassId}"]`);
+        if (playingCard) {
+            playingCard.classList.add('playing');
+            
+            // Update play button text and style
+            const playBtn = playingCard.querySelector('.play-btn');
+            if (playBtn) {
+                playBtn.textContent = '🎵 Now Playing';
+                playBtn.classList.add('now-playing');
+            }
+        }
+        
+        // Add playing class to the currently playing row in admin table (if visible)
+        const playingRow = document.querySelector(`tr[data-class-id="${currentClassId}"]`);
+        if (playingRow) {
+            playingRow.classList.add('playing');
+        }
+    }
+    
+    clearPlayingIndicators() {
+        // Remove playing class from all cards and reset play buttons
+        document.querySelectorAll('.class-card.playing').forEach(card => {
+            card.classList.remove('playing');
+            
+            // Reset play button text and style
+            const playBtn = card.querySelector('.play-btn');
+            if (playBtn) {
+                playBtn.textContent = '▶ Play';
+                playBtn.classList.remove('now-playing');
+            }
+        });
+        
+        // Reset all now-playing buttons that might not have the playing class
+        document.querySelectorAll('.play-btn.now-playing').forEach(btn => {
+            btn.textContent = '▶ Play';
+            btn.classList.remove('now-playing');
+        });
+        
+        // Remove playing class from all table rows
+        document.querySelectorAll('tr.playing').forEach(row => {
+            row.classList.remove('playing');
+        });
     }
 
     // Override deleteClass to handle both single and bulk delete
     async deleteClass(classId, showConfirm = true) {
-        if (showConfirm && !confirm('Are you sure you want to delete this class?')) return;
+        if (showConfirm) {
+            const confirmed = await this.customConfirm('Are you sure you want to delete this class?', 'Delete Class');
+            if (!confirmed) return;
+        }
         
         try {
             const cls = this.classes.find(c => c.id === classId) || 
@@ -1160,12 +1571,12 @@ class AudioClassesApp {
                     this.closeAudioPlayer();
                 }
                 
-                alert('Class deleted successfully!');
+                this.customSuccess('Class deleted successfully!');
             }
         } catch (error) {
             console.error('Delete error:', error);
             if (showConfirm) {
-                alert('Delete failed: ' + error.message);
+                this.customError('Delete failed: ' + error.message);
             } else {
                 throw error; // Re-throw for bulk delete handling
             }
