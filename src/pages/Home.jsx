@@ -44,7 +44,6 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
       const matchesSearch = 
         cls.title?.toLowerCase().includes(searchLower) ||
         cls.description?.toLowerCase().includes(searchLower) ||
-        cls.category?.toLowerCase().includes(searchLower) ||
         cls.tags?.some(tag => tag.toLowerCase().includes(searchLower));
       
       if (!matchesSearch) return false;
@@ -165,14 +164,11 @@ function Home({ onPlayTrack, currentTrack, isPlaying }) {
                   <p className={`mt-1 ${cls.thumbnail_url ? 'text-xs' : 'text-sm'} text-gray-500 ${cls.thumbnail_url ? 'line-clamp-2' : ''}`}>
                     {cls.description || 'No description'}
                   </p>
-                  <div className={`mt-2 flex items-center ${cls.thumbnail_url ? 'text-xs' : 'text-sm'} text-gray-500`}>
-                    <span>{cls.category || 'Uncategorized'}</span>
-                    {cls.duration && (
-                      <>
-                        <span className="mx-2">•</span>
-                        <span>{Math.floor(cls.duration / 60)}:{String(cls.duration % 60).padStart(2, '0')}</span>
-                      </>
-                    )}
+                  {cls.duration && (
+                    <div className={`mt-2 flex items-center ${cls.thumbnail_url ? 'text-xs' : 'text-sm'} text-gray-500`}>
+                      <span>{Math.floor(cls.duration / 60)}:{String(cls.duration % 60).padStart(2, '0')}</span>
+                    </div>
+                  )}
                   </div>
                   {cls.tags && cls.tags.length > 0 && (
                     <div className={`mt-2 flex flex-wrap gap-1 ${cls.thumbnail_url ? 'max-h-8 overflow-hidden' : ''}`}>

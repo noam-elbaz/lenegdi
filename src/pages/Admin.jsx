@@ -135,7 +135,6 @@ function UploadTab() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: '',
     thumbnail_url: '',
     tags: '',
     audio_file: null
@@ -234,7 +233,6 @@ function UploadTab() {
       await createClass({
         title: formData.title,
         description: formData.description,
-        category: formData.category,
         thumbnail_url: formData.thumbnail_url || null,
         tags: Array.from(selectedTags),
         audio_file_path: audioPath,
@@ -251,7 +249,6 @@ function UploadTab() {
       setFormData({
         title: '',
         description: '',
-        category: '',
         thumbnail_url: '',
         tags: '',
         audio_file: null
@@ -337,22 +334,6 @@ function UploadTab() {
             disabled={isUploading}
             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm disabled:bg-gray-50"
             placeholder="Enter class description"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-            Category
-          </label>
-          <input
-            type="text"
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleInputChange}
-            disabled={isUploading}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm disabled:bg-gray-50"
-            placeholder="e.g. Torah Study, Prayer, Holiday"
           />
         </div>
 
@@ -540,7 +521,6 @@ function ManageTab() {
       await updateClass(editingClass.id, {
         title: editingClass.title,
         description: editingClass.description,
-        category: editingClass.category,
         thumbnail_url: editingClass.thumbnail_url || null,
         tags: editingClass.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
       });
@@ -637,11 +617,6 @@ function ManageTab() {
                         <p className="text-sm font-medium text-gray-900">
                           {classItem.title}
                         </p>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {classItem.category || 'Uncategorized'}
-                          </p>
-                        </div>
                       </div>
                       <p className="mt-1 text-sm text-gray-500">
                         {classItem.description || 'No description'}
@@ -697,16 +672,6 @@ function ManageTab() {
                   value={editingClass.description}
                   onChange={(e) => setEditingClass(prev => ({ ...prev, description: e.target.value }))}
                   rows={3}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <input
-                  type="text"
-                  value={editingClass.category}
-                  onChange={(e) => setEditingClass(prev => ({ ...prev, category: e.target.value }))}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:ring-1 sm:text-sm"
                 />
               </div>

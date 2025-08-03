@@ -180,7 +180,7 @@ function AudioPlayer({ currentTrack, playlist = [], isPlaying, onTrackChange, on
             </button>
             <button 
               onClick={togglePlay}
-              className="p-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-12 h-12 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center justify-center text-lg"
             >
               {isPlaying ? '⏸' : '▶'}
             </button>
